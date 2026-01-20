@@ -113,6 +113,8 @@ app_license = "mit"
 
 # notification_config = "bemantech.notifications.get_notification_config"
 
+fixtures = ["Custom DocPerm","Client Script"]
+
 # Permissions
 # -----------
 # Permissions evaluated in scripted ways

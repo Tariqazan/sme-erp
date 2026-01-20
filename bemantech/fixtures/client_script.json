@@ -1,0 +1,35 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Sales Invoice",
+  "enabled": 1,
+  "modified": "2026-01-12 22:27:21.034186",
+  "module": null,
+  "name": "Sales Invoice",
+  "script": "const setDefaultWarehouse = (frm) => {\n\tif (frm.is_new() && !frm.doc.set_warehouse && frm.doc.company) {\n\t\tfrappe.db.get_value('Company', frm.doc.company, 'abbr')\n\t\t\t.then(r => {\n\t\t\t\tif (r?.message?.abbr) {\n\t\t\t\t\tfrm.set_value(\n\t\t\t\t\t\t'set_warehouse',\n\t\t\t\t\t\t`Stores - ${r.message.abbr}`\n\t\t\t\t\t);\n\t\t\t\t}\n\t\t\t});\n\t}\n};\n\nfrappe.ui.form.on('Sales Invoice', {\n\tonload(frm) {\n\t\tsetDefaultWarehouse(frm);\n\t}\n});",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Purchase Invoice",
+  "enabled": 1,
+  "modified": "2026-01-12 22:27:30.781484",
+  "module": null,
+  "name": "Purchase Invoice",
+  "script": "const setDefaultWarehouse = (frm) => {\n\tif (frm.is_new() && !frm.doc.set_warehouse && frm.doc.company) {\n\t\tfrappe.db.get_value('Company', frm.doc.company, 'abbr')\n\t\t\t.then(r => {\n\t\t\t\tif (r?.message?.abbr) {\n\t\t\t\t\tfrm.set_value(\n\t\t\t\t\t\t'set_warehouse',\n\t\t\t\t\t\t`Stores - ${r.message.abbr}`\n\t\t\t\t\t);\n\t\t\t\t}\n\t\t\t});\n\t}\n};\n\nfrappe.ui.form.on('Purchase Invoice', {\n\tonload(frm) {\n\t\tsetDefaultWarehouse(frm);\n\t}\n});\n",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Customer",
+  "enabled": 1,
+  "modified": "2026-01-15 16:04:09.484949",
+  "module": null,
+  "name": "Customer",
+  "script": "frappe.ui.form.on('Customer', {\n    refresh(frm) {\n        if (!frm.is_new()) {\n            frm.add_custom_button(__('Customer GL PDF'), () => {\n\n                const default_company = frm.doc.company || frappe.defaults.get_user_default(\"Company\");\n\n                const d = new frappe.ui.Dialog({\n                    title: 'Select Date Range for GL PDF',\n                    fields: [\n                        {\n                            fieldtype: 'Date',\n                            label: 'From Date',\n                            fieldname: 'from_date',\n                            default: frappe.datetime.year_start()\n                        },\n                        {\n                            fieldtype: 'Date',\n                            label: 'To Date',\n                            fieldname: 'to_date',\n                            default: frappe.datetime.year_end()\n                        },\n                        {\n                            fieldtype: 'Link',\n                            label: 'Company',\n                            fieldname: 'company',\n                            options: 'Company',\n                            default: default_company,\n                            reqd: 1\n                        }\n                    ],\n                    primary_action_label: 'Download PDF',\n                    primary_action(values) {\n                        d.hide();\n\n                        // Build API URL with query params\n                        const url = `/api/method/bemantech.api.customer_gl_pdf.download?customer=${encodeURIComponent(frm.doc.name)}&company=${encodeURIComponent(values.company)}&from_date=${values.from_date}&to_date=${values.to_date}`;\n\n                        // Open PDF in new tab\n                        window.open(url, '_blank');\n                    }\n                });\n\n                d.show();\n            }, __('View'));\n        }\n    }\n});\n",
+  "view": "Form"
+ }
+]
