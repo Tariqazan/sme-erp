@@ -1,11 +1,5 @@
-// Debug: Verify script is loading
-console.log("Bemantech Payment Entry script loaded");
-
 frappe.ui.form.on("Payment Entry", {
     refresh: function (frm) {
-        console.log("Payment Entry refresh handler called");
-        alert("refresh");
-        
         // Fetch and set custom_customer_id on form refresh
         if (frm.doc.party_type === "Customer" && frm.doc.party) {
             // Fetch custom_customer_id from Customer doctype
@@ -80,8 +74,6 @@ function calculate_reference_totals(frm) {
             }
         });
     }
-    alert(grand_total);
-    alert(total_outstanding);
 
     // Set the calculated totals in custom fields
     frm.set_value("custom_grand_total", grand_total);
