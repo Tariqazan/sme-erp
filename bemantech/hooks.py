@@ -107,6 +107,8 @@ app_license = "mit"
 # before_app_uninstall = "bemantech.utils.before_app_uninstall"
 # after_app_uninstall = "bemantech.utils.after_app_uninstall"
 
+
+
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
@@ -139,13 +141,11 @@ fixtures = ["Custom DocPerm","Client Script"]
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+ doc_events = {
+ 	"Sales Invoice": {
+ 		"after_insert": "bemantech.doc_events.sales_invoice_after_insert"
+ 	}
+ }
 
 # Scheduled Tasks
 # ---------------
