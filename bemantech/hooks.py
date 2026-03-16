@@ -139,13 +139,11 @@ fixtures = ["Custom DocPerm","Client Script"]
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Payment Entry": {
+		"on_submit": "bemantech.api.payment_sms.send_payment_received_sms"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
