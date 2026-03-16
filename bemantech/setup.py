@@ -1,6 +1,9 @@
 from setuptools import setup, find_packages
 
-with open("requirements.txt") as f:
+import os
+
+req_file = os.path.join(os.path.dirname(__file__), "bemantech", "requirements.txt")
+with open(req_file) as f:
 	install_requires = f.read().strip().split("\n")
 
 # get version from __version__ variable in bemantech/__init__.py
