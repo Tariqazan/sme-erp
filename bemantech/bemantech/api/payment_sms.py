@@ -213,6 +213,51 @@ def send_payment_received_sms(doc, method):
         )
 
 
+def send_sales_invoice_sms(doc, method):
+    """
+    Send SMS to customer when Sales Invoice is submitted.
+    Triggered via doc_events hook on Sales Invoice submit.
+    """
+    # Only send for customer invoices (not return invoices)
+    if doc.is_return:
+        return
+
+    try:
+        customer_doc = frappe.get_doc("Customer", doc.customer)
+
+        mobile_no = _get_customer_mobile(customer_doc)
+
+        if not mobile_no:
+            frappe.log_error(
+                f"No mobile number found for customer {doc.customer}. "
+                f"Checked Customer.mobile_no/custom_mobile_no/phone and linked Contact numbers.",
+                "Sales Invoice SMS Failed"
+            )
+            return
+
+        company = doc.company or frappe.defaults.get_user_default("company")
+        currency = doc.currency or "BDT"
+        due_date = frappe.utils.formatdate(doc.due_date) if doc.due_date else ""
+        due_info = f" Due date: {due_date}." if due_date else ""
+
+        message = (
+            f"Dear {customer_doc.customer_name}, "
+            f"Invoice {doc.name} for {currency} {doc.grand_total:,.2f} has been created."
+            f"{due_info} "
+            f"- {company}"
+        )
+
+        send_sms_bulksmsbd(mobile_no, message)
+
+        frappe.msgprint(f"Sales Invoice SMS sent to {mobile_no}", alert=True)
+
+    except Exception as e:
+        frappe.log_error(
+            f"Failed to send sales invoice SMS for {doc.name}: {str(e)}",
+            "Sales Invoice SMS Error"
+        )
+
+
 @frappe.whitelist()
 def send_payment_sms_manually(payment_entry_name):
     """

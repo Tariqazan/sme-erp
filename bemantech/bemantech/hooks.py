@@ -142,6 +142,9 @@ fixtures = ["Custom DocPerm","Client Script"]
 doc_events = {
 	"Payment Entry": {
 		"on_submit": "bemantech.api.payment_sms.send_payment_received_sms"
+	},
+	"Sales Invoice": {
+		"on_submit": "bemantech.api.payment_sms.send_sales_invoice_sms"
 	}
 }
 
