@@ -31,6 +31,22 @@ def _normalize_mobile(mobile_no):
     return normalized
 
 
+def _format_money(amount):
+    if amount in (None, ""):
+        return None
+
+    return f"{frappe.utils.flt(amount):,.2f}"
+
+
+def _get_first_available_value(doc, fieldnames):
+    for fieldname in fieldnames:
+        value = doc.get(fieldname)
+        if value not in (None, ""):
+            return value
+
+    return None
+
+
 def _get_customer_mobile(customer_doc):
     candidates = [
         customer_doc.get("mobile_no"),
@@ -240,9 +256,43 @@ def send_sales_invoice_sms(doc, method):
         due_date = frappe.utils.formatdate(doc.due_date) if doc.due_date else ""
         due_info = f" Due date: {due_date}." if due_date else ""
 
+        down_payment = doc.get("custom_down_payment")
+        installment_amount = doc.get("custom_each_installment_amount")
+        installment_qty = doc.get("custom_installment_qty")
+        guarantor_count = _get_first_available_value(
+            doc,
+            [
+                "custom_jamindar",
+                "custom_guarantor",
+                "custom_guarantor_count",
+                "guarantor",
+            ],
+        )
+
+        payment_parts = []
+
+        formatted_down_payment = _format_money(down_payment)
+        if formatted_down_payment:
+            payment_parts.append(f"Down payment: {currency} {formatted_down_payment}")
+
+        if installment_qty not in (None, ""):
+            payment_parts.append(f"Installments: {frappe.utils.cint(installment_qty)}")
+
+        formatted_installment_amount = _format_money(installment_amount)
+        if formatted_installment_amount:
+            payment_parts.append(
+                f"Each installment: {currency} {formatted_installment_amount}"
+            )
+
+        if guarantor_count not in (None, ""):
+            payment_parts.append(f"Guarantor: {frappe.utils.cint(guarantor_count)}")
+
+        payment_info = " Payment info: " + ", ".join(payment_parts) + "." if payment_parts else ""
+
         message = (
             f"Dear {customer_doc.customer_name}, "
             f"Invoice {doc.name} for {currency} {doc.grand_total:,.2f} has been created."
+            f"{payment_info}"
             f"{due_info} "
             f"- {company}"
         )
