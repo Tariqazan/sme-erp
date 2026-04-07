@@ -50,6 +50,7 @@ def _get_first_available_value(doc, fieldnames):
 def _get_customer_mobile(customer_doc):
     candidates = [
         customer_doc.get("mobile_no"),
+        customer_doc.get("custom_mobile_number"),
         customer_doc.get("custom_mobile_no"),
         customer_doc.get("phone"),
     ]
@@ -232,12 +233,8 @@ def send_payment_received_sms(doc, method):
 def send_sales_invoice_sms(doc, method):
     """
     Send SMS to customer when Sales Invoice is submitted.
-    Triggered via doc_events hook on Sales Invoice submit.
+    Triggered via doc_events hook on Sales Invoice on_submit.
     """
-    # Only send for customer invoices (not return invoices)
-    if doc.is_return:
-        return
-
     try:
         customer_doc = frappe.get_doc("Customer", doc.customer)
 
@@ -253,21 +250,16 @@ def send_sales_invoice_sms(doc, method):
 
         company = doc.company or frappe.defaults.get_user_default("company")
         currency = doc.currency or "BDT"
+        is_return = bool(doc.is_return)
+        document_label = "Credit Note" if is_return else "Invoice"
+        action_verb = "has been issued" if is_return else "has been created"
+        amended_info = f" against {doc.amended_from}." if is_return and doc.amended_from else "."
         due_date = frappe.utils.formatdate(doc.due_date) if doc.due_date else ""
         due_info = f" Due date: {due_date}." if due_date else ""
 
         down_payment = doc.get("custom_down_payment")
         installment_amount = doc.get("custom_each_installment_amount")
         installment_qty = doc.get("custom_installment_qty")
-        guarantor_count = _get_first_available_value(
-            doc,
-            [
-                "custom_jamindar",
-                "custom_guarantor",
-                "custom_guarantor_count",
-                "guarantor",
-            ],
-        )
 
         payment_parts = []
 
@@ -284,14 +276,11 @@ def send_sales_invoice_sms(doc, method):
                 f"Each installment: {currency} {formatted_installment_amount}"
             )
 
-        if guarantor_count not in (None, ""):
-            payment_parts.append(f"Guarantor: {frappe.utils.cint(guarantor_count)}")
-
         payment_info = " Payment info: " + ", ".join(payment_parts) + "." if payment_parts else ""
 
         message = (
             f"Dear {customer_doc.customer_name}, "
-            f"Invoice {doc.name} for {currency} {doc.grand_total:,.2f} has been created."
+            f"{document_label} {doc.name} for {currency} {doc.grand_total:,.2f} {action_verb}{amended_info}"
             f"{payment_info}"
             f"{due_info} "
             f"- {company}"
