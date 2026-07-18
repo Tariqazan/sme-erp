@@ -38,6 +38,7 @@ def sales_invoice_on_submit(doc, method):
 		payment_entry.posting_date = doc.posting_date or nowdate()
 		payment_entry.reference_date = doc.posting_date or nowdate()
 		payment_entry.remarks = f"Down payment against Sales Invoice {doc.name}"
+		payment_entry.reference_no = doc.name
 		
 		# Update references to allocate the payment against this invoice
 		if payment_entry.references:
@@ -61,3 +62,4 @@ def sales_invoice_on_submit(doc, method):
 			f"Error creating payment entry: {str(e)}",
 			indicator="red"
 		)
+
