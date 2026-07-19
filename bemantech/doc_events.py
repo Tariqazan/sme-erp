@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import flt, nowdate
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+from erpnext.accounts.utils import get_balance_on
 
 
 def sales_invoice_on_submit(doc, method):
@@ -63,3 +64,36 @@ def sales_invoice_on_submit(doc, method):
 			indicator="red"
 		)
 
+
+def payment_entry_after_insert(doc, method):
+	"""
+	Record the customer's outstanding balance before this payment on
+	custom_total_outstanding_before, then set custom_total_outstanding to the
+	balance remaining after deducting the paid amount.
+	"""
+	try:
+		# Only applicable when the party is a Customer
+		if doc.party_type != "Customer" or not doc.party:
+			return
+
+		# Balance before this payment (draft entry hasn't posted GL yet)
+		outstanding_before = flt(
+			get_balance_on(
+				party_type="Customer",
+				party=doc.party,
+				company=doc.company,
+				date=doc.posting_date or nowdate(),
+			)
+		)
+
+		doc.db_set("custom_total_outstanding_before", outstanding_before)
+		doc.db_set(
+			"custom_total_outstanding",
+			outstanding_before - flt(doc.paid_amount),
+		)
+
+	except Exception as e:
+		frappe.log_error(
+			message=f"Error setting outstanding balances for Payment Entry {doc.name}: {str(e)}",
+			title="Payment Entry Outstanding Update Error",
+		)

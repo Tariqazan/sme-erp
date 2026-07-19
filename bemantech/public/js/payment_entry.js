@@ -17,9 +17,11 @@ frappe.ui.form.on("Payment Entry", {
                 frm.set_value("custom_customer_id", "");
             }
         }
-        
-        // Calculate totals from references
-        calculate_reference_totals(frm);
+
+        // On a new form, fetch the customer's outstanding balance from the API
+        if (frm.is_new()) {
+            set_outstanding_before(frm);
+        }
     },
 
     party: function (frm) {
@@ -37,6 +39,11 @@ frappe.ui.form.on("Payment Entry", {
         } else {
             // Clear custom_customer_id if party_type is not Customer or party is empty
             frm.set_value("custom_customer_id", "");
+        }
+
+        // Refresh the outstanding balance for a new entry when the party changes
+        if (frm.is_new()) {
+            set_outstanding_before(frm);
         }
     },
 
@@ -57,55 +64,24 @@ frappe.ui.form.on("Payment Entry", {
     }
 });
 
-// Calculate totals from Payment Entry Reference child table
-function calculate_reference_totals(frm) {
-    let grand_total = 0;
-    let total_outstanding = 0;
-
-    if (frm.doc.references && frm.doc.references.length > 0) {
-        frm.doc.references.forEach(function (ref) {
-            // Sum up total_amount (Grand Total)
-            if (ref.total_amount) {
-                grand_total += flt(ref.total_amount);
-            }
-            // Sum up outstanding_amount (Outstanding)
-            if (ref.outstanding_amount) {
-                total_outstanding += flt(ref.outstanding_amount);
-            }
-        });
+// Fetch the customer's outstanding balance (before this payment) from the API
+function set_outstanding_before(frm) {
+    if (frm.doc.party_type !== "Customer" || !frm.doc.party) {
+        return;
     }
 
-    // Set the calculated totals in custom fields
-    frm.set_value("custom_grand_total", grand_total);
-    frm.set_value("custom_total_outstanding", total_outstanding);
+    frappe.call({
+        method: "erpnext.accounts.utils.get_balance_on",
+        args: {
+            party_type: "Customer",
+            party: frm.doc.party,
+            company: frm.doc.company,
+            date: frm.doc.posting_date,
+        },
+        callback: function (r) {
+            if (r && r.message !== undefined && r.message !== null) {
+                frm.set_value("custom_total_outstanding_before", flt(r.message));
+            }
+        },
+    });
 }
-
-// Handle Payment Entry Reference child table events
-frappe.ui.form.on("Payment Entry Reference", {
-    reference_name: function (frm, cdt, cdn) {
-        // Recalculate totals when a reference is added/changed
-        setTimeout(function () {
-            calculate_reference_totals(frm);
-        }, 100);
-    },
-
-    total_amount: function (frm) {
-        // Recalculate when total_amount changes
-        calculate_reference_totals(frm);
-    },
-
-    outstanding_amount: function (frm) {
-        // Recalculate when outstanding_amount changes
-        calculate_reference_totals(frm);
-    },
-
-    allocated_amount: function (frm) {
-        // Recalculate when allocated_amount changes
-        calculate_reference_totals(frm);
-    },
-
-    references_remove: function (frm) {
-        // Recalculate when a reference is removed
-        calculate_reference_totals(frm);
-    }
-});

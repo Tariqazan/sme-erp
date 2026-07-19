@@ -148,6 +148,7 @@ doc_events = {
  		"on_submit": "bemantech.doc_events.sales_invoice_on_submit"
  	},
 	"Payment Entry": {
+        "after_insert": "bemantech.doc_events.payment_entry_after_insert",
 		"on_submit": "bemantech.api.payment_sms.send_payment_received_sms"
 	}
 }
