@@ -71,10 +71,9 @@ function set_outstanding_before(frm) {
     }
 
     frappe.call({
-        method: "erpnext.accounts.utils.get_balance_on",
+        method: "bemantech.doc_events.get_customer_outstanding",
         args: {
-            party_type: "Customer",
-            party: frm.doc.party,
+            customer: frm.doc.party,
             company: frm.doc.company,
             date: frm.doc.posting_date,
         },

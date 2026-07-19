@@ -65,6 +65,22 @@ def sales_invoice_on_submit(doc, method):
 		)
 
 
+@frappe.whitelist()
+def get_customer_outstanding(customer, company=None, date=None):
+	"""Return the customer's outstanding receivable balance for use on the client."""
+	if not customer:
+		return 0
+
+	return flt(
+		get_balance_on(
+			party_type="Customer",
+			party=customer,
+			company=company,
+			date=date or nowdate(),
+		)
+	)
+
+
 def payment_entry_after_insert(doc, method):
 	"""
 	Record the customer's outstanding balance before this payment on
